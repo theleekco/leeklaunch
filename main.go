@@ -39,11 +39,12 @@ func main() {
 			logWriter = io.MultiWriter(os.Stderr, logFile)
 			defer logFile.Close()
 
-			log.SetOutput(logWriter)
-
 			log.Printf("Logging to file: %s", logFilePath)
 		}
 	}
+
+	log.SetOutput(logWriter)
+	log.SetFlags(log.Ldate | log.Ltime)
 
 	selfPath, err := os.Executable()
 	if err != nil {
