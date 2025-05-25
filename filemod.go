@@ -44,22 +44,25 @@ func patchFiles() error {
 
 		clientFilePath := filepath.Join(clientPath, relPath)
 
-		if _, err := os.Stat(clientFilePath); os.IsNotExist(err) {
-			log.Printf("File %s does not exist", relPath)
-			return nil
-		} else {
-			sourceData, err := os.ReadFile(filePath)
+		dir := filepath.Dir(clientFilePath)
+		if _, err := os.Stat(dir); os.IsNotExist(err) {
+			err = os.MkdirAll(dir, 0755)
 			if err != nil {
-				return fmt.Errorf("failed to read source file %s: %v", filePath, err)
+				return fmt.Errorf("failed to create directory %s: %v", dir, err)
 			}
-
-			err = os.WriteFile(clientFilePath, sourceData, 0644)
-			if err != nil {
-				return fmt.Errorf("failed to write to destination file %s: %v", clientFilePath, err)
-			}
-
-			log.Printf("Replacing asset %s", relPath)
 		}
+
+		sourceData, err := os.ReadFile(filePath)
+		if err != nil {
+			return fmt.Errorf("failed to read source file %s: %v", filePath, err)
+		}
+
+		err = os.WriteFile(clientFilePath, sourceData, 0644)
+		if err != nil {
+			return fmt.Errorf("failed to write to destination file %s: %v", clientFilePath, err)
+		}
+
+		log.Printf("Replacing asset %s", relPath)
 
 		return nil
 	})
