@@ -197,18 +197,18 @@ func saveDeployment() error {
 	return nil
 }
 
-func getLatestExecutablePath() (string, error) {
+func getLatestVersionSave() (string, error) {
 	latestClientInfo, err := getClientInfo()
 	if err != nil {
 		return "", fmt.Errorf("failed to get client info: %v", err)
 	}
 
-	confgDir := getConfigDirectory()
-	versionsDir := path.Join(confgDir, "versions")
-
+	configDir := getConfigDirectory()
+	versionsDir := path.Join(configDir, "versions")
 	clientVersion := latestClientInfo.ClientVersionUpload
-	executablePath := path.Join(versionsDir, clientVersion, "RobloxPlayerBeta.exe")
 
+	// check if the client executable exists otherwise it might be an empty dir
+	executablePath := path.Join(versionsDir, clientVersion, "RobloxPlayerBeta.exe")
 	if _, err := os.Stat(executablePath); os.IsNotExist(err) {
 		saveError := saveDeployment()
 
@@ -216,6 +216,19 @@ func getLatestExecutablePath() (string, error) {
 			return "", fmt.Errorf("%v", saveError)
 		}
 	}
+
+	return path.Join(configDir, "versions", clientVersion), nil
+}
+
+func getLatestExecutablePath() (string, error) {
+	versionDir, err := getLatestVersionSave()
+
+	if err != nil {
+		return "", fmt.Errorf("failed to get latest version save: %v", err)
+	}
+
+	// checking if this exists is already done in getLatestVersionSave
+	executablePath := path.Join(versionDir, "RobloxPlayerBeta.exe")
 
 	return executablePath, nil
 }
@@ -238,8 +251,14 @@ func launchRoblox(playerArgs ...string) error {
 		return fmt.Errorf("%v", err)
 	}
 
-	if err := safeLaunch(executablePath, playerArgs...); err != nil {
-		return fmt.Errorf("%s", err)
+	err = patchFiles()
+
+	if err != nil {
+		log.Printf("Failed to patch file modifications, got error: %s", err)
+	}
+
+	if launchErr := safeLaunch(executablePath, playerArgs...); launchErr != nil {
+		return fmt.Errorf("%s", launchErr)
 	}
 
 	return nil
