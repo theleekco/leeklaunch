@@ -12,10 +12,12 @@ import (
 
 var playerVar string
 var reinstallVar bool
+var patchVar bool
 
 func init() {
 	flag.StringVar(&playerVar, "player", "", "deeplink or roblox-player protocol")
 	flag.BoolVar(&reinstallVar, "reinstall", false, "whether to reinstall the client")
+	flag.BoolVar(&patchVar, "patch", false, "whether to apply file modifications")
 }
 
 func main() {
@@ -63,6 +65,12 @@ func main() {
 
 		if err := saveDeployment(); err != nil {
 			log.Fatalf("failed to save deployment: %s", err)
+		}
+	}
+
+	if wasFlagPassed("patch") && !wasFlagPassed("player") {
+		if err := patchFiles(); err != nil {
+			log.Fatalf("failed to patch files: %s", err)
 		}
 	}
 
