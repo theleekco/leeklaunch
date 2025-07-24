@@ -1,0 +1,34 @@
+name: CI (Release)
+
+on: [push, pull_request]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build_release:
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        rust: [stable]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: Swatinem/rust-cache@v2
+        with:
+          toolchain: ${{ matrix.rust }}
+
+      - name: Cargo Build (Release)
+        run: cargo build --verbose --all-features --workspace --release
+
+      - name: Upload Release Artifact
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: ${{ github.event.repository.name }}-${{ github.sha }}-release
+          path: target/release/
+          retention-days: 7
