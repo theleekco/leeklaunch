@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use reqwest::Error as RwError;
+use reqwest;
 use phf::phf_map;
 use std::{path, fs, io};
 use zip::ZipArchive;
@@ -56,8 +56,8 @@ static EXTRACTION_ROOTS: phf::Map<&'static str, &'static str> = phf_map! {
     "extracontent-textures.zip" => "./ExtraContent/textures",
 };
 
-pub async fn get_client_settings() -> Result<ClientSettingsResponse, RwError> {
-    let channel = "z1waflag"; // replace later
+pub async fn get_client_settings() -> Result<ClientSettingsResponse, Box<dyn std::error::Error>> {
+    let channel = "LIVE"; // replace later
     let client_settings_url = if channel == "LIVE" {
         "https://clientsettingscdn.roblox.com/v2/client-version/WindowsPlayer".to_string()
     } else {
@@ -94,7 +94,7 @@ pub async fn uses_common_bucket(channel: &str) -> Result<bool, Box<dyn std::erro
 }
 
 pub async fn get_version_manifest() -> Result<String, Box<dyn std::error::Error>> {
-    let channel = "z1waflag"; // replace later
+    let channel = "LIVE"; // replace later
     let client_settings = get_client_settings().await?;
     let uses_common = uses_common_bucket(channel).await?;
 
