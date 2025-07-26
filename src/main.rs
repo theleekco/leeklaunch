@@ -21,6 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Hello, world!");
     
+    userconfig::get_config().await?;
     userconfig::register_proto().unwrap();
 
     if let Some(reinstall) = args.reinstall {

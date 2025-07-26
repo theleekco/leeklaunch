@@ -57,7 +57,9 @@ static EXTRACTION_ROOTS: phf::Map<&'static str, &'static str> = phf_map! {
 };
 
 pub async fn get_client_settings() -> Result<ClientSettingsResponse, Box<dyn std::error::Error>> {
-    let channel = "LIVE"; // replace later
+    let app_config = userconfig::get_config().await?;
+
+    let channel = app_config.channel;
     let client_settings_url = if channel == "LIVE" {
         "https://clientsettingscdn.roblox.com/v2/client-version/WindowsPlayer".to_string()
     } else {
@@ -94,9 +96,11 @@ pub async fn uses_common_bucket(channel: &str) -> Result<bool, Box<dyn std::erro
 }
 
 pub async fn get_version_manifest() -> Result<String, Box<dyn std::error::Error>> {
-    let channel = "LIVE"; // replace later
+    let app_config = userconfig::get_config().await?;
+
+    let channel = app_config.channel;
     let client_settings = get_client_settings().await?;
-    let uses_common = uses_common_bucket(channel).await?;
+    let uses_common = uses_common_bucket(&channel.to_string()).await?;
 
     let manifest_url = if uses_common {
         println!("USING COMMON!");

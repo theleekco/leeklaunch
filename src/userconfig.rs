@@ -1,9 +1,29 @@
-use std::fs::create_dir_all;
+use std::fs;
 use std::path;
 use std::env::{current_exe};
 use windows_registry::{Transaction, CLASSES_ROOT};
 use directories::BaseDirs;
+use config::Config;
+use std::collections::HashMap;
+use serde;
+use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct AppConfig {
+    #[serde(default)]
+    pub channel: String,
+    #[serde(default = "HashMap::new")]
+    pub fflags: HashMap<String, bool>,
+}
+
+impl Default for AppConfig {
+    fn default() -> Self {
+        AppConfig {
+            channel: "LIVE".to_string(),
+            fflags: HashMap::new(),
+        }
+    }
+}
 pub fn register_proto() -> Result<(), Box<dyn std::error::Error>> {
     const PATHS: [&str; 2] = [
         "roblox",
@@ -46,8 +66,42 @@ pub async fn get_data_directory() -> Result<path::PathBuf, Box<dyn std::error::E
     let leek_dir = data_dir.join("leeklaunch");
 
     if !leek_dir.exists() {
-        create_dir_all(&leek_dir)?;
+        fs::create_dir_all(&leek_dir)?;
     }
 
     Ok(leek_dir)
+}
+
+pub async fn write_config(cfg: &AppConfig) -> Result<bool, Box<dyn std::error::Error>> {
+    let data_dir = get_data_directory().await?;
+    let cfg_path = data_dir.join("leek.json");
+
+    let json_string = serde_json::to_string_pretty(cfg)?;
+    fs::write(&cfg_path, &json_string)?;
+
+    Ok(true)
+}
+
+pub async fn get_config() -> Result<AppConfig, Box<dyn std::error::Error>> {
+    let data_dir = get_data_directory().await?;
+    let cfg_path = data_dir.join("leek.json");
+
+    if !cfg_path.exists() {
+        let default_config = AppConfig::default();
+        let json_string = serde_json::to_string_pretty(&default_config)?;
+
+        fs::write(&cfg_path, &json_string)?;
+    }
+
+    let cfg = Config::builder()
+        .add_source(config::File::from(cfg_path.to_owned()))
+        .build()?
+        .try_deserialize::<AppConfig>()?;
+
+    // make it so missing values are set to default
+    // does this count as a hack?
+    let cfg_str = serde_json::to_string_pretty(&cfg)?;
+    fs::write(cfg_path, cfg_str)?;
+        
+    Ok(cfg)
 }
