@@ -87,7 +87,7 @@ pub async fn get_version_manifest() -> Result<String, Box<dyn std::error::Error>
     } else {
         format!(
             "https://setup.rbxcdn.com/{}-rbxPkgManifest.txt",
-            channel
+            client_settings.client_version_upload
         )
     };
 
