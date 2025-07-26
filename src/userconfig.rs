@@ -7,13 +7,14 @@ use config::Config;
 use std::collections::HashMap;
 use serde;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct AppConfig {
     #[serde(default)]
     pub channel: String,
     #[serde(default = "HashMap::new")]
-    pub fflags: HashMap<String, bool>,
+    pub fflags: HashMap<String, Value>,
 }
 
 impl Default for AppConfig {

@@ -215,14 +215,22 @@ pub async fn save_deployment() {
 }
 
 pub async fn probe_install() -> Result<String, Box<dyn std::error::Error>> {
+    let app_config = userconfig::get_config().await?;
     let versions_dir = userconfig::get_data_directory().await?.join("versions");
     let client_settings = get_client_settings().await?;
 
-    let player_path = versions_dir.join(format!("{}/RobloxPlayerBeta.exe", client_settings.client_version_upload));
+    let current_version = versions_dir.join(&client_settings.client_version_upload);
+    let player_path = current_version.join("RobloxPlayerBeta.exe");
+    let fflag_path = current_version.join("ClientSettings");
 
     if !fs::exists(&player_path)? {
         save_deployment().await
     }
+
+    if !fs::exists(&fflag_path)? {
+        fs::create_dir_all(&fflag_path)?;
+    }
+    fs::write(&fflag_path.join("ClientAppSettings.json"), serde_json::to_string_pretty(&app_config.fflags)?)?;
 
     Ok(player_path.to_string_lossy().into_owned())
 }
