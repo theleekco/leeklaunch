@@ -73,49 +73,23 @@ pub async fn get_client_settings() -> Result<ClientSettingsResponse, Box<dyn std
     Ok(client_info)
 }
 
-pub async fn uses_common_bucket(channel: &str) -> Result<bool, Box<dyn std::error::Error>> {
-    let flags_url = format!(
-        "https://clientsettings.roblox.com/v2/settings/application/PCDesktopClient/bucket/{}",
-        channel
-    );
-
-    let response = reqwest::get(flags_url).await?.error_for_status()?;
-    let json = serde_json::from_str::<serde_json::Value>(&response.text().await?)?;
-    let app_settings = json.get("applicationSettings");
-
-    if let Some(app_settings) = app_settings {
-        if let Some(val) = app_settings.get("FFlagReplaceChannelNameForDownload") {
-            // i hate this with the passion of a thousand suns
-            if val == &serde_json::Value::String("True".to_string()) {
-                return Ok(true)
-            }
-        }
-    }
-
-    Ok(false)
-}
-
 pub async fn get_version_manifest() -> Result<String, Box<dyn std::error::Error>> {
     let app_config = userconfig::get_config().await?;
 
     let channel = app_config.channel;
     let client_settings = get_client_settings().await?;
-    let uses_common = uses_common_bucket(&channel.to_string()).await?;
 
-    let manifest_url = if uses_common {
-        println!("USING COMMON!");
+    let manifest_url = if channel != "LIVE" {
         format!(
             "https://setup.rbxcdn.com/channel/common/{}-rbxPkgManifest.txt",
             client_settings.client_version_upload
         )
     } else {
         format!(
-            "https://setup.rbxcdn.com/channel/{}/{}-rbxPkgManifest.txt",
-            channel,
-            client_settings.client_version_upload
+            "https://setup.rbxcdn.com/{}-rbxPkgManifest.txt",
+            channel
         )
     };
-
 
     let response = reqwest::get(manifest_url).await?.error_for_status()?;
     let manifest_content = response.text().await?;
